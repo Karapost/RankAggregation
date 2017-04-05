@@ -9,18 +9,20 @@ class ScorerFileManager:
 
     #pick doc_id and score
     def from_file_to_dictionary_aggregation(self, file_path):
+
         file = open(file_path, "r")
         lines = file.readlines()
         dictionary = {}
-        for i in range(1,len(lines)):				#while to for,dropped 2 lines
+
+        for i in range(1,len(lines)):
             parsed_line = lines[i].split()
             query_id = parsed_line[0]	
-            doc_id = parsed_line[1]				#ordered fields
+            doc_id = parsed_line[1]
             score = parsed_line[3]
-            if query_id in dictionary:				#dropped 'is not none'
-                dictionary[query_id].append((doc_id, score))
+            if query_id in dictionary:
+                dictionary[query_id].update({doc_id: score})
             else:
-                dictionary[query_id] = [(doc_id, score)]
+                dictionary[query_id] = {doc_id: score}
         file.close()
         return dictionary
     

@@ -1,39 +1,33 @@
 import ScorerFileManager
+import operator
 
 class Threshold:
     def __init__(self):
         self.sfm = ScorerFileManager.ScorerFileManager()
-        self.dictionary_text = self.sfm.get_out_cran_eng_stop_text_bm25()
-        self.dictionary_title = self.sfm.get_out_cran_eng_stop_title_bm25()
-
-    def list_to_dictionary(self, list):
-        dictionary = {}
-        if list is not None:
-            for value in list:
-                dictionary[value[0]] = value[1]
-        return dictionary
+        self.dictionary_text_query = self.sfm.get_out_cran_eng_stop_text_bm25()
+        self.dictionary_title_query = self.sfm.get_out_cran_eng_stop_title_bm25()
 
     def threshold_algorithm(self, query_id, k):
 
-        #[(doc_id,score)...(x,y)]
-        values_text = self.dictionary_text.get(query_id)
-        values_title = self.dictionary_title.get(query_id)
+        dictionary_title = self.dictionary_title_query.get(str(query_id))  # Dictionary
+        dictionary_text = self.dictionary_text_query.get(str(query_id))  # Dictionary
 
-        #{doc_id: score, ..., x:y}
-        dictionary_text = self.list_to_dictionary(values_text)
-        dictionary_title = self.list_to_dictionary(values_title)
+        iterator_title = iter(dictionary_title.keys())  # Iterator on keys
+        iterator_text = iter(dictionary_text.keys())  # Iterator on keys
 
-        memory = []
+        iterator_title_threshold =  iter(dictionary_title.keys())
+        iterator_text_threshold = iter(dictionary_text.keys())
 
-        dictionary_final = {}
+        memory = {}
+
+        threshold = float(dictionary_title.get(next(iterator_title_threshold))) + float(dictionary_text.get(next(iterator_text_threshold)))
         i = 0
-        threshold = float(values_text[i][1]) + float(values_title[i][1])
         min_threshold = 0
 
-        while (min_threshold < threshold):
+        while (min_threshold < threshold and i<199 ):
 
-            item_title = values_title[i][0]
-            item_text = values_text[i][0]
+            item_title = next(iterator_title)
+            item_text = next(iterator_text)
 
             #Case if the item is only in dictionary for item_title
             if dictionary_title.get(item_title) is None:
@@ -53,30 +47,19 @@ class Threshold:
             else:
                 item_text_score = float(dictionary_text.get(item_text)) + float(dictionary_title.get(item_text))
 
+            #If the items are the same, the second if will find that it is in memory
+            if item_title not in memory:
+                memory[item_title] = item_title_score
 
-            #I have the same item in the same row
-            if item_title == item_text:
-                if [(item_text, item_text_score)] not in memory:
-                    memory.append([item_text,item_text_score])
+            if item_text not in memory:
+                memory[item_text] = item_text_score
 
-            #I have two different Items
-            else:
-                #item1 not in memory -> append
-                if [(item_title, item_title_score)] not in memory:
-                    memory.append([item_title, item_title_score])
-
-                #the same for item2
-                if [(item_text, item_text_score)] not in memory:
-                    memory.append([item_text, item_text_score])
-
-
-            memory = sorted(memory, key=lambda x: x[1],reverse=True)
-            threshold = float(values_text[i+1][1]) + float(values_title[i+1][1])
-
-
-            min_threshold = self.getKth(memory, k)
+            list_temp = sorted(memory.items(), key=operator.itemgetter(1), reverse=True)
+            threshold = float(dictionary_title.get(next(iterator_title_threshold))) + float(dictionary_text.get(next(iterator_text_threshold)))
+            min_threshold = self.getKth(list_temp, k)
             i = i + 1
-        return self.firstKlist(memory, k)
+
+        return self.firstKlist(list_temp, k)
 
     def getKth(self, list, k):
         if len(list) < k :
@@ -85,17 +68,11 @@ class Threshold:
             return list[k-1][1]
 
     def firstKlist(self, list, k):
-        output= []
+        output = []
         i = 0
-        while (i<k):
+        while (i < k):
             output.append(list[i])
-            i = i+1
+            i = i + 1
         return output
 
-    def sort_dictionary(self, dictionary):
-        list = []
-        for key in dictionary.items():
-            temp = dictionary.get(key)
-            list.append(key)
-        return sorted(list, key=lambda x: x[1],reverse=True)
 
