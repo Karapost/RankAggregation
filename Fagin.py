@@ -9,8 +9,12 @@ class Fagin:
 
     def fagin_algorithm(self, query_id, k):
 
-        if (str(query_id) not in self.dictionary_text_query or str(query_id) not in self.dictionary_title_query):   #TO CHANGE
+        if str(query_id) not in self.dictionary_text_query and str(query_id) not in self.dictionary_title_query:
             return None
+        elif str(query_id) not in self.dictionary_text_query:
+            return self.partial_fagin_algorithm(self.dictionary_title_query.get(str(query_id)), k, True)
+        elif str(query_id) not in self.dictionary_title_query:
+            return self.partial_fagin_algorithm(self.dictionary_text_query.get(str(query_id)), k, False)
 
         dictionary_title_doc = self.dictionary_title_query.get(str(query_id))  # Dictionary
         dictionary_text_doc = self.dictionary_text_query.get(str(query_id))  # Dictionary
@@ -57,3 +61,20 @@ class Fagin:
                     results.append((value, float(dictionary_text_doc[value])))
 
         return sorted(results, key=lambda x: x[1], reverse=True)
+
+    def partial_fagin_algorithm(self, dictionary_doc, k, is_title):
+
+        items = dictionary_doc.items()
+        sorted_items = sorted(items, key=lambda x: x[1], reverse=True)
+
+        results = []
+        i = 0
+
+        while i <= k and i < len(sorted_items):
+            if is_title is True:
+                results.append((sorted_items[i][0], 2 * sorted_items[i][1]))
+            else:
+                results.append((sorted_items[i][0], sorted_items[i][1]))
+            i +=1
+
+        return results
